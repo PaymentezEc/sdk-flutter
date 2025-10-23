@@ -128,12 +128,12 @@ class Authentication {
     factory Authentication.fromJson(Map<String, dynamic> json) => Authentication(
         status: json["status"],
         returnMessage: json["return_message"],
-        version: json["version"],
+        version: json["version"] ?? '',
         xid: json["xid"],
-        referenceId: json["reference_id"],
+        referenceId: json["reference_id"]?? '',
         cavv: json["cavv"],
         returnCode: json["return_code"],
-        eci: json["eci"],
+        eci: json["eci"] ?? '',
     );
 
     Map<String, dynamic> toJson() => {

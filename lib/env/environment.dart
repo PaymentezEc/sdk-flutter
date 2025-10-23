@@ -1,3 +1,4 @@
+import 'package:http/http.dart';
 import 'package:nuvei_sdk_flutter/env/base_config.dart';
 import 'package:nuvei_sdk_flutter/env/dev_config.dart';
 import 'package:nuvei_sdk_flutter/env/prod_config.dart';
@@ -12,6 +13,8 @@ class Environment {
   String _appKey = '';
   String _serverCode = '';
   String _serverKey = '';
+  String _clientId = '';
+  String _clientSecret = '';
 
   static const String dev = "DEV";
   static const String prod = "PROD";
@@ -20,6 +23,8 @@ class Environment {
   String get appKey => _appKey;
   String get serverKey => _serverKey;
   String get serverCode => _serverCode;
+  String get clientId => _clientId;
+  String get clientSecret => _clientSecret;
 
   BaseConfig? baseConfig;
 
@@ -29,6 +34,8 @@ class Environment {
     required String serveCode,
     required String serverKey,
     required bool testMode,
+    required String clientId,
+    required String clientSecret,
   }) {
     _appCode = appCode;
     _appKey = appKey;
@@ -39,6 +46,8 @@ class Environment {
     } else {
       baseConfig = _getConfig(Environment.prod);
     }
+    _clientId = clientId;
+    _clientSecret = clientSecret;
     GlobalHelper.logger.i('Envirnment configurated, $appCode');
   }
 

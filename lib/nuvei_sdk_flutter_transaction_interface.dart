@@ -26,6 +26,8 @@ abstract class NuveiSdkFlutterTransactionInterface {
     String serverCode,
     String serverKey,
     bool testMode,
+    String clientId,
+    String clientSecret
   ) {
     throw UnimplementedError('Delete card has not been implemented');
   }
@@ -49,7 +51,7 @@ abstract class NuveiSdkFlutterTransactionInterface {
     throw UnimplementedError('Delete card has not been implemented');
   }
 
-  Future<GeneralResponse> addCard(CardModel card, UserModel user, BuildContext context) {
+  Future<GeneralResponse> addCard(CardModel card, UserModel user, BuildContext context, String termId) {
     throw UnimplementedError('Delete card has not been implemented');
   }
 

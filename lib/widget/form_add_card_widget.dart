@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_flip_card/controllers/flip_card_controllers.dart';
+import 'package:nuvei_sdk_flutter/env/environment.dart';
 import 'package:nuvei_sdk_flutter/helper/card_helper.dart';
 import 'package:nuvei_sdk_flutter/helper/global_helper.dart';
 import 'package:nuvei_sdk_flutter/model/add_card_model/card_model.dart';
@@ -14,6 +15,7 @@ import 'package:nuvei_sdk_flutter/model/verify_model/otp_request_model.dart';
 import 'package:nuvei_sdk_flutter/model/verify_model/otp_response_model.dart';
 import 'package:nuvei_sdk_flutter/nuvei_sdk_flutter.dart';
 import 'package:nuvei_sdk_flutter/nuvei_sdk_flutter_transaction_interface.dart';
+import 'package:nuvei_sdk_flutter/services/cres_services.dart';
 import 'package:nuvei_sdk_flutter/widget/card_widget.dart';
 import 'package:nuvei_sdk_flutter/widget/filled_button_widget.dart';
 import 'package:nuvei_sdk_flutter/widget/text_form_field_widget.dart';
@@ -66,6 +68,9 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
   String _transactionId = '';
   bool _activateOtp = false;
   bool _isOtpValid = true;
+  String tokenCres= '';
+  String referenceId ='';
+  CresServices cresServices =CresServices();
 
   void _cvcFlipCard() async {
     GlobalHelper.logger.i('focus ${(_cvcFocus.hasFocus && !_flipped)}');
@@ -92,6 +97,20 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
 
   _addCardProcess() async {
     widget.onLoading(true);
+    final cresResponse = await cresServices.loginCres(Environment().clientId, Environment().clientSecret);
+    if(!cresResponse.error){
+
+      tokenCres = cresResponse.data!.accessToken;
+      setState(() {
+        
+      });
+    final referenceCresResponse  = await cresServices.createReferenceCres(tokenCres);
+    if(!referenceCresResponse.error){
+
+    
+
+    referenceId = referenceCresResponse.data!.id;
+
     final expiryDate = _expireDateController.text.split('/');
     final expiryMonth = expiryDate[0];
     final expiryYear = expiryDate[1];
@@ -110,6 +129,7 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
       bodyAddCard,
       useInfo,
       context,
+      referenceCresResponse.data!.id
     );
     if (!response.error) {
       GlobalHelper.logger.i(jsonEncode(response.data));
@@ -128,6 +148,7 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
           setState(() {});
           break;
         case 'review':
+        _transactionId = cardResponseModel.card.transactionReference;
           _verifyBy3ds(cardResponseModel.the3Ds!.browserResponse);
           break;
         case 'rejected':
@@ -152,22 +173,39 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
       );
       widget.onErrorProcess(error);
     }
-  }
+    }}}
 
 
-  _verifyByCress()async{
-    widget.onLoading(true);
+  _verifyByCress(String cress)async{
     try {
+      Navigator.pop(context);
+    widget.onLoading(true);
+     await cresServices.confirmCres(tokenCres, referenceId); 
     final response = await NuveiSdkFlutterTransactionInterface.instance.verify(OtpRequest(
                 user: OtpUser(id: widget.userId),
                 transaction: OtpTransaction(id: _transactionId),
                 moreInfo: true,
-                value: 'U3VjY2VzcyBBdXRoZW50aWNhdGlvbg',
+                value: cress,
                 type: 'BY_CRES',
               ),);
         widget.onLoading(false);
+    
       if(!response.error){
-          
+          GlobalHelper.logger.w('Response: ${response.data["transaction"]["status"] }');
+          if(response.data["transaction"]["status"] == 'success'){
+            widget.onSuccesProcess(true);
+
+          }else{
+
+            String messageError = 'Error in request add card';
+            if(response.data["transaction"]["status"] == 'failure'){
+              messageError = 'Card rejected';
+            }
+
+
+
+            widget.onErrorProcess(ErrorResponseModel(error: Error(type: '', help: 'Error in add card', description: messageError)));
+          }
       }
     } catch (e) {
        widget.onLoading(false);
@@ -186,8 +224,7 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
   _verifyBy3ds(BrowserResponse browserResponse) async {
     if (browserResponse.challengeRequest.isNotEmpty) {
       widget.onLoading(false);
-       GlobalHelper().showModalWebView(context, (){
-             _verifyByCress();   }, browserResponse.challengeRequest);
+       GlobalHelper().showModalWebView(context, _verifyByCress, browserResponse.challengeRequest, tokenCres, referenceId);
     } else {
       await Future.delayed(const Duration(seconds: 5));
       try {
@@ -489,8 +526,8 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
                 ),
                 // SizedBox(height: 20),
                 // FilledButtonWidget(
-                //   width: size.width * 0.9,
-                //   text: 'show modal',
+                  //   width: size.width * 0.9,
+                  //   text: 'show modal',
                 //   onPressed: () {
                    
                 //   },

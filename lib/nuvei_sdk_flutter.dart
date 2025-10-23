@@ -65,6 +65,8 @@ class NuveiSdkFlutter {
     String serverCode,
     String serverKey,
     bool testMode,
+    String clientId,
+    String clientSecret,
   ) {
     return NuveiSdkFlutterTransactionInterface.instance.initEnvironment(
       appCode,
@@ -72,6 +74,8 @@ class NuveiSdkFlutter {
       serverCode,
       serverKey,
       testMode,
+      clientId,
+      clientSecret
     );
   }
 }

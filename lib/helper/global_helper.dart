@@ -8,12 +8,16 @@ import 'package:http/http.dart' as http;
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'package:nuvei_sdk_flutter/env/environment.dart';
+import 'package:nuvei_sdk_flutter/helper/three_ds_handler.dart';
 import 'package:nuvei_sdk_flutter/model/add_card_model/extra_params_model.dart';
+import 'package:nuvei_sdk_flutter/nuvei_sdk_flutter.dart';
+import 'package:nuvei_sdk_flutter/services/cres_services.dart';
 import 'package:nuvei_sdk_flutter/widget/filled_button_widget.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class GlobalHelper {
-  static var logger = Logger(
+    static var logger = Logger(
     printer: PrettyPrinter(methodCount: 0, printEmojis: false),
   );
 
@@ -81,19 +85,29 @@ class GlobalHelper {
     }
   }
 
-  showModalWebView(context, Function() onClose, String challengueHtml)async {
+  showModalWebView(context, Function(String) onClose, String challengueHtml, String token, String idCress)async {
+
+    CresServices serviceCres = CresServices();
+
+
+    ThreeDsHandler _handler = ThreeDsHandler();
+
+    _handler.startPolling(()=>serviceCres.cresGetData(token, idCress),onClose);
+
+    GlobalHelper.logger.w('ENTRA AL CHALLENGUE');
     final controller = WebViewController()
+
   
     ..setJavaScriptMode(JavaScriptMode.unrestricted)
     ..setBackgroundColor(const Color(0x00000000))
     ..setNavigationDelegate(
       NavigationDelegate(
         onNavigationRequest: ( request) {
-          if(request.url.contains('callback3DS.php')){
-            Navigator.pop(context);
-            onClose();
+          // if(request.url.contains('nuvei-cres-dev-bkh4atahdegxa8dk.')){
+          //   Navigator.pop(context);
+          //   // onClose();
 
-          }
+          // }
           return NavigationDecision.navigate;
         },
       )
@@ -124,7 +138,8 @@ class GlobalHelper {
                 child: FilledButtonWidget(
                   onPressed: () {
                     Navigator.pop(context);
-                    onClose();
+                    _handler.stopPolling();
+                    // onClose();
                   },
                   text: 'Close',
                 ),

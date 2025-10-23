@@ -18,6 +18,8 @@ class InterceptorHttp {
     String code,
     String key,
     dynamic body, {
+      String tokenCress = '',
+     bool isCress = false,
     Map<String, dynamic>? queryParameters,
     String requestType = "JSON",
     int timeout = 60,
@@ -26,7 +28,8 @@ class InterceptorHttp {
       printer: PrettyPrinter(methodCount: 0, printEmojis: false),
     );
     final urlService = Environment().baseConfig?.urlBase ?? 'no url';
-    String url = "$urlService$urlEndpoint";
+    final urlCresBase = Environment().baseConfig?.urlCresBase ?? 'no url';
+    String url = isCress ? "$urlCresBase$urlEndpoint": "$urlService$urlEndpoint";
     if (queryParameters != null && queryParameters.isNotEmpty) {
       url += "?${Uri(queryParameters: queryParameters).query}";
     }
@@ -42,12 +45,26 @@ class InterceptorHttp {
     try {
       http.Response _response;
       Uri uri = Uri.parse(url);
-      String token = GlobalHelper().generateToken(code, key);
-      log(token);
-      Map<String, String> _headers = {
-        "Auth-token": token,
+     
+
+      Map<String, String> _headers= {};
+
+      if(isCress){
+          _headers = {
+        "Authorization": 'Bearer $tokenCress',
         "Content-Type": "application/json",
       };
+      }else{
+         _headers = {
+         "Auth-token": GlobalHelper().generateToken(code, key),
+         "Content-Type": "application/json",
+         };
+      }
+
+      // Map<String, String> _headers = {
+      //   "Auth-token": token,
+      //   "Content-Type": "application/json",
+      // };
 
       int responseStatusCode = 0;
       String responseBody = "";
@@ -77,7 +94,7 @@ class InterceptorHttp {
       logger.log(Level.error, responseBody);
       responseStatusCode = _response.statusCode;
       log(responseStatusCode.toString());
-      logger.log(Level.trace, json.decode(responseBody));
+      // logger.log(Level.trace, json.decode(responseBody));
       switch (responseStatusCode) {
         case 200:
           generalResponse.data = json.decode(responseBody);

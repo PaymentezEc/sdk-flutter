@@ -36,6 +36,8 @@ class _HomePageState extends State<HomePage> {
       Constants.serverCode,
       Constants.serverKey,
       true,
+      Constants.clientId,
+      Constants.clientSecret
     );
   }
 

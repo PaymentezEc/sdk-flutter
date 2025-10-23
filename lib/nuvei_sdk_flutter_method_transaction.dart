@@ -37,6 +37,8 @@ class NuveiSdkFlutterMethodTransaction
     String serverCode,
     String serverKey,
     bool testMode,
+    String clientId,
+    String clientSecret,
   ) {
     env.initConfig(
       appCode: appCode,
@@ -44,6 +46,8 @@ class NuveiSdkFlutterMethodTransaction
       serveCode: serverCode,
       serverKey: serverKey,
       testMode: testMode,
+      clientId: clientId,
+      clientSecret: clientSecret
     );
   }
 
@@ -126,6 +130,7 @@ class NuveiSdkFlutterMethodTransaction
     CardModel card,
     UserModel user,
     BuildContext context,
+    String termId,
   ) async {
     final urlEndpoint = "/v2/card/add";
     try {
@@ -133,7 +138,7 @@ class NuveiSdkFlutterMethodTransaction
 
       final extraParams = ExtraParamsModel(
         threeDs2Data: ThreeDs2Data(
-          termUrl: 'https://lantechco.ec/img/callback3DS.php',
+          termUrl: 'https://nuvei-cres-dev-bkh4atahdegxa8dk.eastus-01.azurewebsites.net/api/cres/save/$termId',
           deviceType: 'browser',
         ),
         browserInfo: await GlobalHelper().getBrowserInfo(context),

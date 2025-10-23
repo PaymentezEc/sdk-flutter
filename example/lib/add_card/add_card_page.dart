@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nuvei_sdk_flutter/widget/filled_button_widget.dart';
 import 'package:nuvei_sdk_flutter/widget/form_add_card_widget.dart';
 
 class AddCardPage extends StatefulWidget {
@@ -30,10 +31,74 @@ class _AddCardPageState extends State<AddCardPage> {
           }
         },
         onErrorProcess:(error) {
-          
+           showDialog(
+        context: context,
+        builder:
+            (context) => Scaffold(
+              backgroundColor: Colors.transparent,
+              body: Center(
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.3,
+                  width: MediaQuery.of(context).size.width * 0.9,
+                  child: Card(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(error.error.description, style: TextStyle(fontSize: 20)),
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width * 0.7,
+                            child: FilledButtonWidget(
+                              text: "Close",
+                              onPressed: () async {
+                                
+                                Navigator.pop(context);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+      );
         },
         onSuccesProcess: (approved) {
-          
+           showDialog(
+        context: context,
+        builder:
+            (context) => Scaffold(
+              backgroundColor: Colors.transparent,
+              body: Center(
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.3,
+                  width: MediaQuery.of(context).size.width * 0.9,
+                  child: Card(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('CARD ADDED SUCCESFULLY', style: TextStyle(fontSize: 20)),
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width * 0.7,
+                            child: FilledButtonWidget(
+                              text: "Close",
+                              onPressed: () async {
+                                
+                                Navigator.pop(context);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+      );
         },
       ),
     );
