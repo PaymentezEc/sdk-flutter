@@ -38,7 +38,9 @@ class Error {
     factory Error.fromJson(Map<String, dynamic> json) => Error(
         type: json["type"],
         help: json["help"],
-        description: json["description"],
+        description:(json["description"] is String)
+      ? json["description"]
+      : jsonEncode(json["description"] ?? ''),
     );
 
     Map<String, dynamic> toJson() => {

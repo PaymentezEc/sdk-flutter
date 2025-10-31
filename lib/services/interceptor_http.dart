@@ -226,6 +226,7 @@ class InterceptorHttp {
       generalResponse.error = true;
       logger.e("Error on request: $stacktrace");
     }
+    GlobalHelper.logger.w('Esto devuelve ${jsonEncode(generalResponse)}');
     return generalResponse;
   }
 

@@ -160,7 +160,7 @@ class NuveiSdkFlutterMethodTransaction
         );
         return GeneralResponse(error: false, data: cardResponse);
       }
-      return GeneralResponse(error: true, data: null);
+      return GeneralResponse(error: true, data: response.data);
     } catch (e) {
       GlobalHelper.logger.e('ERROOOR: $e');
        return GeneralResponse(

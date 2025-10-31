@@ -181,7 +181,7 @@ class SdkResponse {
 
     factory SdkResponse.fromJson(Map<String, dynamic> json) => SdkResponse(
         acsTransId: json["acs_trans_id"],
-        acsSignedContent: json["acs_signed_content"],
+        acsSignedContent: json["acs_signed_content"] ?? '',
         acsReferenceNumber: json["acs_reference_number"],
     );
 

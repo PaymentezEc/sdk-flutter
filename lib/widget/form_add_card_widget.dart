@@ -168,9 +168,9 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
       }
     } else {
       widget.onLoading(false);
-      ErrorResponseModel error = errorResponseModelFromJson(
-        jsonEncode(response.data),
-      );
+      GlobalHelper.logger.e(jsonEncode(response.data));
+      ErrorResponseModel error = response.data;
+
       widget.onErrorProcess(error);
     }
     }}}
@@ -199,12 +199,13 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
 
             String messageError = 'Error in request add card';
             if(response.data["transaction"]["status"] == 'failure'){
-              messageError = 'Card rejected';
+              messageError =response.data["transaction"]["message"] ?? 'Failed to autenticate' ;
+
             }
 
 
-
-            widget.onErrorProcess(ErrorResponseModel(error: Error(type: '', help: 'Error in add card', description: messageError)));
+            _clearAllForms();
+            widget.onErrorProcess(ErrorResponseModel(error: Error(type: messageError, help: 'Error in add card', description: '')));
           }
       }
     } catch (e) {
@@ -265,6 +266,11 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
           ErrorResponseModel error = errorResponseModelFromJson(
             jsonEncode(response.data),
           );
+         if(mounted) {
+           setState(() {
+            
+          });
+         }
           widget.onErrorProcess(error);
         }
 
@@ -341,6 +347,7 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
   }
 
   void _clearAllForms() {
+
     _numberCardController.clear();
     _holdenNameController.clear();
     _cvcCodeController.clear();
@@ -410,6 +417,8 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
                     hintText: 'Holder´s Name',
                     maxLength: 20,
                     enabled: !_activateOtp,
+                    textCapitalization: TextCapitalization.characters,
+                    
                     autovalidateMode: AutovalidateMode.onUnfocus,
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'[A-Z ]')),
