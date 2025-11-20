@@ -128,22 +128,7 @@ class TextFormFieldWidget extends StatelessWidget {
           fillColor: fillColor,
           hintText: hintText,
           hintStyle: TextStyle(
-              // color: hintColor ?? AppTheme.textTitleForm,
-              // fontSize: responsive.isTablet ? responsive.dp(1.4) : 13,
               fontFamily: fontFamily),
-          // prefixIcon: prefixIcon ??
-          //     (hintIcon != null
-          //         ? Row(
-          //             mainAxisSize: MainAxisSize.min,
-          //             children: [
-          //               Icon(hintIcon, color: AppTheme.primaryDarkest),
-          //             ],
-          //           )
-          //         : null),
-          // prefixIconConstraints: BoxConstraints(
-          //   minHeight: responsive.dp(3),
-          //   minWidth: responsive.dp(3.5)
-          // ),
           suffixIcon: suffixIcon,
           alignLabelWithHint: true,
           isCollapsed: false,

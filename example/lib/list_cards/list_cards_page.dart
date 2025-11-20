@@ -76,18 +76,21 @@ class _ListCardsPageState extends State<ListCardsPage> {
                   width: MediaQuery.of(context).size.width * 0.9,
                   child: Card(
                     child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(response.data, style: TextStyle(fontSize: 20)),
-                          FilledButtonWidget(
-                            text: "Close",
-                            onPressed: () async {
-                              getCards();
-                              Navigator.pop(context);
-                            },
-                          ),
-                        ],
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Text(response.data, style: TextStyle(fontSize: 20)),
+                            FilledButtonWidget(
+                              text: "Close",
+                              onPressed: () async {
+                                getCards();
+                                Navigator.pop(context);
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

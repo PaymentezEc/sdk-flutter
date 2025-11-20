@@ -8,6 +8,7 @@ import 'package:nuvei_sdk_flutter/helper/card_helper.dart';
 import 'package:nuvei_sdk_flutter/helper/global_helper.dart';
 import 'package:nuvei_sdk_flutter/model/add_card_model/card_model.dart';
 import 'package:nuvei_sdk_flutter/model/add_card_model/card_response_model.dart';
+import 'package:nuvei_sdk_flutter/model/add_card_model/extra_params_model.dart';
 import 'package:nuvei_sdk_flutter/model/error_model.dart';
 import 'package:nuvei_sdk_flutter/model/general_response.dart';
 import 'package:nuvei_sdk_flutter/model/user_model.dart';
@@ -16,6 +17,7 @@ import 'package:nuvei_sdk_flutter/model/verify_model/otp_response_model.dart';
 import 'package:nuvei_sdk_flutter/nuvei_sdk_flutter.dart';
 import 'package:nuvei_sdk_flutter/nuvei_sdk_flutter_transaction_interface.dart';
 import 'package:nuvei_sdk_flutter/services/cres_services.dart';
+import 'package:nuvei_sdk_flutter/services/interceptor_http.dart';
 import 'package:nuvei_sdk_flutter/widget/card_widget.dart';
 import 'package:nuvei_sdk_flutter/widget/filled_button_widget.dart';
 import 'package:nuvei_sdk_flutter/widget/text_form_field_widget.dart';
@@ -44,9 +46,9 @@ class FormAddCardWidget extends StatefulWidget {
   final Color backgroundButtonColor;
   final String userId;
   final String email;
-  
+
   final Function(bool value) onLoading;
-  final void Function(bool approved) onSuccesProcess;
+  final void Function(bool approved, String message) onSuccesProcess;
   final void Function(ErrorResponseModel error) onErrorProcess;
 
   @override
@@ -54,23 +56,32 @@ class FormAddCardWidget extends StatefulWidget {
 }
 
 class _FormAddCardWidgetState extends State<FormAddCardWidget> {
+  InterceptorHttp interceptorHttp = InterceptorHttp();
+  Environment env = Environment();
   final _keyForm = GlobalKey<FormState>();
+
   final bool isLoading = false;
+
   final TextEditingController _numberCardController = TextEditingController();
   final TextEditingController _holdenNameController = TextEditingController();
   final TextEditingController _expireDateController = TextEditingController();
   final TextEditingController _cvcCodeController = TextEditingController();
   final TextEditingController _otpCodeController = TextEditingController();
-
-  bool _flipped = false;
   final controller = FlipCardController();
   final _cvcFocus = FocusNode();
-  String _transactionId = '';
+
+  bool _flipped = false;
+
+  String referenceId = '';
+
   bool _activateOtp = false;
-  bool _isOtpValid = true;
-  String tokenCres= '';
-  String referenceId ='';
-  CresServices cresServices =CresServices();
+  bool otpCodeValid = false;
+
+  String tokenCres = '';
+  String cresReferenceId = '';
+  String challengueHtml = '';
+
+  CresServices cresServices = CresServices();
 
   void _cvcFlipCard() async {
     GlobalHelper.logger.i('focus ${(_cvcFocus.hasFocus && !_flipped)}');
@@ -97,24 +108,26 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
 
   _addCardProcess() async {
     widget.onLoading(true);
-    final cresResponse = await cresServices.loginCres(Environment().clientId, Environment().clientSecret);
-    if(!cresResponse.error){
-
-      tokenCres = cresResponse.data!.accessToken;
-      setState(() {
-        
-      });
-    final referenceCresResponse  = await cresServices.createReferenceCres(tokenCres);
-    if(!referenceCresResponse.error){
-
-    
-
-    referenceId = referenceCresResponse.data!.id;
+    if (Environment().clientId.isNotEmpty) {
+      final cresResponse = await cresServices.loginCres(
+        Environment().clientId,
+        Environment().clientSecret,
+      );
+      if (!cresResponse.error) {
+        tokenCres = cresResponse.data!.accessToken;
+        setState(() {});
+      }
+      final referenceCresResponse = await cresServices.createReferenceCres(
+        tokenCres,
+      );
+      if (!referenceCresResponse.error) {
+        cresReferenceId = referenceCresResponse.data!.id;
+      }
+    }
 
     final expiryDate = _expireDateController.text.split('/');
     final expiryMonth = expiryDate[0];
     final expiryYear = expiryDate[1];
-
     final cleanNumber = _numberCardController.text.trim().replaceAll(' ', '');
     final bodyAddCard = CardModel(
       number: cleanNumber,
@@ -125,229 +138,348 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
       type: CardHelper().getCardInfo(_numberCardController.text).typeCode,
     );
     final useInfo = UserModel(id: widget.userId, email: widget.email);
-    final response = await NuveiSdkFlutterTransactionInterface.instance.addCard(
-      bodyAddCard,
-      useInfo,
-      context,
-      referenceCresResponse.data!.id
+    final extraParams = ExtraParamsModel(
+      threeDs2Data: ThreeDs2Data(
+        termUrl:
+            'https://nuvei-cres-dev-bkh4atahdegxa8dk.eastus-01.azurewebsites.net/api/cres/save/$cresReferenceId',
+        deviceType: 'browser',
+      ),
+      browserInfo: await GlobalHelper().getBrowserInfo(context),
     );
+    final data = {
+      "user": useInfo,
+      "card": bodyAddCard,
+      "extra_params": extraParams,
+    };
+
+    final response = await interceptorHttp.request(
+      'POST',
+      "/v2/card/add",
+      env.appCode,
+      env.appKey,
+      data,
+    );
+
     if (!response.error) {
-      GlobalHelper.logger.i(jsonEncode(response.data));
       CardResponseModel cardResponseModel = cardResponseModelFromJson(
         jsonEncode(response.data),
       );
-      switch (cardResponseModel.card.status) {
-        case 'valid':
-          _clearAllForms();
-          widget.onSuccesProcess(true);
+      referenceId = cardResponseModel.card.transactionReference;
+      switch (cardResponseModel.transaction.statusDetail) {
+        case 7:
           widget.onLoading(false);
-        case 'pending':
+          if (cardResponseModel.card.status == "valid") {
+            widget.onSuccesProcess(true, "Card Added Succesfully");
+          } else {
+            widget.onSuccesProcess(
+              false,
+              "Status: ${cardResponseModel.card.status}",
+            );
+          }
+          _clearAllForms();
+          break;
+        case 9:
+          widget.onLoading(false);
+          widget.onSuccesProcess(
+            false,
+            "Status: ${cardResponseModel.card.status}",
+          );
+          _clearAllForms();
+          break;
+        case 31:
+          widget.onLoading(false);
           _activateOtp = true;
-          _transactionId = cardResponseModel.card.transactionReference;
-          widget.onLoading(false);
-          setState(() {});
           break;
-        case 'review':
-        _transactionId = cardResponseModel.card.transactionReference;
-          _verifyBy3ds(cardResponseModel.the3Ds!.browserResponse);
-          break;
-        case 'rejected':
-          widget.onSuccesProcess(false);
-          _clearAllForms();
+        case 35:
+          await Future.delayed(const Duration(seconds: 5));
+          await _verify(
+            value: "",
+            type: "AUTHENTICATION_CONTINUE",
+            transactionId: referenceId,
+          );
+        case 36:
+           widget.onLoading(false);
+                GlobalHelper().showModalWebView(
+                  context,
+                  (cresValue) {
+                    _verify(
+                      value: cresValue,
+                      type: "BY_CRES",
+                      transactionId: referenceId,
+                    );
+                  },
+                  cardResponseModel.the3Ds?.browserResponse.challengeRequest ?? '',
+                  tokenCres,
+                  cresReferenceId,
+                );
           break;
         default:
           widget.onErrorProcess(
             ErrorResponseModel(
               error: Error(
-                type: 'Error en request',
-                help: '',
-                description: 'Error in add card request',
+                type: "Error in Request",
+                help: "help",
+                description:
+                    "Status_detail: ${cardResponseModel.transaction.statusDetail}",
               ),
             ),
           );
+          break;
       }
     } else {
       widget.onLoading(false);
-      GlobalHelper.logger.e(jsonEncode(response.data));
       ErrorResponseModel error = response.data;
 
       widget.onErrorProcess(error);
     }
-    }}}
-
-
-  _verifyByCress(String cress)async{
-    try {
-      Navigator.pop(context);
-    widget.onLoading(true);
-     await cresServices.confirmCres(tokenCres, referenceId); 
-    final response = await NuveiSdkFlutterTransactionInterface.instance.verify(OtpRequest(
-                user: OtpUser(id: widget.userId),
-                transaction: OtpTransaction(id: _transactionId),
-                moreInfo: true,
-                value: cress,
-                type: 'BY_CRES',
-              ),);
-        widget.onLoading(false);
-    
-      if(!response.error){
-          GlobalHelper.logger.w('Response: ${response.data["transaction"]["status"] }');
-          if(response.data["transaction"]["status"] == 'success'){
-            widget.onSuccesProcess(true);
-
-          }else{
-
-            String messageError = 'Error in request add card';
-            if(response.data["transaction"]["status"] == 'failure'){
-              messageError =response.data["transaction"]["message"] ?? 'Failed to autenticate' ;
-
-            }
-
-
-            _clearAllForms();
-            widget.onErrorProcess(ErrorResponseModel(error: Error(type: messageError, help: 'Error in add card', description: '')));
-          }
-      }
-    } catch (e) {
-       widget.onLoading(false);
-        return GeneralResponse(
-          error: true,
-          data: ErrorResponseModel(
-            error: Error(type: 'Exception', help: '', description: '$e'),
-          ),
-        );
-    }
-
+    setState(() {});
   }
 
+  Future<void> _verify({
+    required String value,
+    required String type,
+    required String transactionId,
+  }) async {
+    try {
+      if (type != "AUTHENTICATION_CONTINUE") {
+        widget.onLoading(true);
+      }
 
+      final otpRequest = OtpRequest(
+        user: OtpUser(id: widget.userId),
+        transaction: OtpTransaction(id: transactionId),
+        moreInfo: true,
+        type: type,
+        value: value,
+      );
 
-  _verifyBy3ds(BrowserResponse browserResponse) async {
-    if (browserResponse.challengeRequest.isNotEmpty) {
+      final response = await interceptorHttp.request(
+        'POST',
+        '/v2/transaction/verify',
+        env.serverCode,
+        env.serverKey,
+        otpRequest,
+      );
+
       widget.onLoading(false);
-       GlobalHelper().showModalWebView(context, _verifyByCress, browserResponse.challengeRequest, tokenCres, referenceId);
-    } else {
-      await Future.delayed(const Duration(seconds: 5));
-      try {
-        final response = await NuveiSdkFlutterTransactionInterface.instance
-            .verify(
-              OtpRequest(
-                user: OtpUser(id: widget.userId),
-                transaction: OtpTransaction(id: _transactionId),
-                moreInfo: true,
-                value: '',
-                type: 'AUTHENTICATION_CONTINUE',
-              ),
-            );
-
-         widget.onLoading(false);
-        if (!response.error) {
-          OtpResponse responseOtp = OtpResponse.fromJson(response.data);
-          
-
-          switch (responseOtp.transaction?.status) {
-            case 'succes':
-              _clearAllForms();
-              widget.onLoading(false);
-              widget.onSuccesProcess(true);
-              break;
-            case 'pending':
-              _verifyBy3ds(responseOtp.threeDs!.browserResponse);
-              break;
-            case 'failure':
-              _clearAllForms();
-              widget.onLoading(false);
-              widget.onSuccesProcess(false);
-              break;
-            default:
-          }
-        } else {
-          widget.onLoading(false);
-          ErrorResponseModel error = errorResponseModelFromJson(
-            jsonEncode(response.data),
-          );
-         if(mounted) {
-           setState(() {
-            
-          });
-         }
-          widget.onErrorProcess(error);
-        }
-
-       
-      } catch (e) {
-        widget.onLoading(false);
-        return GeneralResponse(
-          error: true,
-          data: ErrorResponseModel(
-            error: Error(type: 'Exception', help: '', description: '$e'),
-          ),
-        );
-      }
-    }
-  }
-
-  _verifyByOtp() async {
-    widget.onLoading(true);
-    try {
-      final response = await NuveiSdkFlutterTransactionInterface.instance
-          .verify(
-            OtpRequest(
-              user: OtpUser(id: widget.userId),
-              transaction: OtpTransaction(id: _transactionId),
-              moreInfo: true,
-              value: _otpCodeController.text,
-              type: 'BY_OTP',
-            ),
-          );
-
-           widget.onLoading(false);
-
       if (!response.error) {
-        OtpResponse responseOtp = OtpResponse.fromJson(response.data);
-        GlobalHelper.logger.w(jsonEncode(responseOtp));
-        GlobalHelper.logger.w('-.------');
-
-        GlobalHelper.logger.w(responseOtp.transaction?.statusDetail);
-
-        switch (responseOtp.transaction?.statusDetail) {
-          case 31:
-            _otpCodeController.clear();
-            _isOtpValid = false;
-            break;
-          case 32:
-            _activateOtp = false;
-            _clearAllForms();
-            widget.onSuccesProcess(true);
-            setState(() {
-              
-            });
-            break;
-          case 33:
-            _clearAllForms();
-            widget.onSuccesProcess(false);
-            break;
-          default:
-        }
-      } else {
-        ErrorResponseModel error = errorResponseModelFromJson(
+        GlobalHelper.logger.w("RESPONSE");
+        OtpResponse otpResponse = otpResponseFromJson(
           jsonEncode(response.data),
         );
-        widget.onErrorProcess(error);
+
+        switch (type) {
+          case "BY_OTP":
+            switch (otpResponse.transaction.statusDetail) {
+              case 31:
+                _otpCodeController.clear();
+                otpCodeValid = false;
+                break;
+              case 32:
+                _activateOtp = false;
+                otpCodeValid = true;
+                _clearAllForms();
+                widget.onSuccesProcess(true, "Card Added succesfully");
+                break;
+              case 33:
+                _clearAllForms();
+                _activateOtp = false;
+                otpCodeValid = true;
+                widget.onErrorProcess(
+                  ErrorResponseModel(
+                    error: Error(
+                      type: "Error in request",
+                      help: "",
+                      description: "Otp Code is not valid",
+                    ),
+                  ),
+                );
+                break;
+              default:
+                _clearAllForms();
+                _activateOtp = false;
+                otpCodeValid = true;
+                widget.onErrorProcess(
+                  ErrorResponseModel(
+                    error: Error(
+                      type: "Error in request",
+                      help: "",
+                      description: "Otp Code is not valid",
+                    ),
+                  ),
+                );
+                break;
+            }
+            break;
+          case "AUTHENTICATION_CONTINUE":
+            switch (otpResponse.transaction.status) {
+              case "success":
+                _clearAllForms();
+                widget.onSuccesProcess(true, "Card Added Succesfully");
+                break;
+              case "pending":
+                widget.onLoading(false);
+                GlobalHelper().showModalWebView(
+                  context,
+                  (cresValue) {
+                    _verify(
+                      value: cresValue,
+                      type: "BY_CRES",
+                      transactionId: referenceId,
+                    );
+                  },
+                  otpResponse.threeDs?.browserResponse?.challengeRequest ?? '',
+                  tokenCres,
+                  cresReferenceId,
+                );
+              case "failure":
+                _clearAllForms();
+                widget.onSuccesProcess(false, "Status: failure");
+                break;
+              default:
+                _clearAllForms();
+                _activateOtp = false;
+                otpCodeValid = true;
+                widget.onErrorProcess(
+                  ErrorResponseModel(
+                    error: Error(
+                      type: "Error in request",
+                      help: "",
+                      description: "Error in request authentication",
+                    ),
+                  ),
+                );
+            }
+            break;
+          case "BY_CRES":
+            switch (otpResponse.transaction.status) {
+              case "success":
+                _clearAllForms();
+                widget.onSuccesProcess(true, "Card Added Succesfully");
+                break;
+              case "failure":
+                _clearAllForms();
+                widget.onSuccesProcess(false, "Status: failure");
+                break;
+              default:
+                _clearAllForms();
+                _activateOtp = false;
+                otpCodeValid = true;
+                widget.onErrorProcess(
+                  ErrorResponseModel(
+                    error: Error(
+                      type: "Error in request",
+                      help: "",
+                      description: "Error in request authentication",
+                    ),
+                  ),
+                );
+            }
+            break;
+
+          default:
+            _clearAllForms();
+            _activateOtp = false;
+            otpCodeValid = true;
+            widget.onErrorProcess(
+              ErrorResponseModel(
+                error: Error(
+                  type: "Error in request",
+                  help: "",
+                  description: "Error in request verify",
+                ),
+              ),
+            );
+            break;
+        }
       }
     } catch (e) {
-      widget.onLoading(false);
-      return GeneralResponse(
-        error: true,
-        data: ErrorResponseModel(
-          error: Error(type: 'Exception', help: '', description: '$e'),
+      GlobalHelper.logger.w("ERROR: $e");
+      widget.onErrorProcess(
+        ErrorResponseModel(
+          error: Error(
+            type: "Error in request",
+            help: '',
+            description: 'Error: $e',
+          ),
         ),
       );
     }
   }
 
-  void _clearAllForms() {
+  // _verifyBy3ds(BrowserResponse browserResponse) async {
+  //   if (browserResponse.challengeRequest.isNotEmpty) {
+  //     widget.onLoading(false);
+  //     GlobalHelper().showModalWebView(
+  //       context,
+  //       _verifyByCress,
+  //       browserResponse.challengeRequest,
+  //       tokenCres,
+  //       referenceId,
+  //     );
+  //   } else {
+  //     await Future.delayed(const Duration(seconds: 10), () {
+  //       GlobalHelper.logger.w('Despues de los 5');
+  //     });
+  //     GlobalHelper.logger.w('Request Verify');
 
+  //     try {
+  //       final response = await NuveiSdkFlutterTransactionInterface.instance
+  //           .verify(
+  //             OtpRequest(
+  //               user: OtpUser(id: widget.userId),
+  //               transaction: OtpTransaction(id: _transactionId),
+  //               moreInfo: true,
+  //               value: '',
+  //               type: 'AUTHENTICATION_CONTINUE',
+  //             ),
+  //           );
+
+  //       widget.onLoading(false);
+  //       if (!response.error) {
+  //         OtpResponse responseOtp = OtpResponse.fromJson(response.data);
+
+  //         switch (responseOtp.transaction?.status) {
+  //           case 'succes':
+  //             _clearAllForms();
+  //             widget.onLoading(false);
+  //             widget.onSuccesProcess(true);
+  //             break;
+  //           case 'pending':
+  //             _verifyBy3ds(responseOtp.threeDs!.browserResponse);
+  //             break;
+  //           case 'failure':
+  //             _clearAllForms();
+  //             widget.onLoading(false);
+  //             widget.onSuccesProcess(false);
+  //             break;
+  //           default:
+  //         }
+  //       } else {
+  //         widget.onLoading(false);
+  //         ErrorResponseModel error = errorResponseModelFromJson(
+  //           jsonEncode(response.data),
+  //         );
+  //         if (mounted) {
+  //           setState(() {});
+  //         }
+  //         widget.onErrorProcess(error);
+  //       }
+  //     } catch (e) {
+  //       widget.onLoading(false);
+  //       return GeneralResponse(
+  //         error: true,
+  //         data: ErrorResponseModel(
+  //           error: Error(type: 'Exception', help: '', description: '$e'),
+  //         ),
+  //       );
+  //     }
+  //   }
+  // }
+
+  void _clearAllForms() {
+    _cvcFocus.unfocus();
+     _keyForm.currentState?.reset();
     _numberCardController.clear();
     _holdenNameController.clear();
     _cvcCodeController.clear();
@@ -388,6 +520,8 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
                     enabled: !_activateOtp,
                     autovalidateMode: AutovalidateMode.onUnfocus,
                     hintText: 'Number Card',
+                    borderSide: BorderSide.none,
+                    fillColor: Colors.grey.shade200,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     validator: (value) {
                       if (value == null ||
@@ -395,17 +529,21 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
                           !CardHelper()
                               .getCardInfo(_numberCardController.text)
                               .validLengths
-                              .contains(value.trim().replaceAll(' ', '').length)) {
-                        return 'Card number is not valids';
+                              .contains(
+                                value.trim().replaceAll(' ', '').length,
+                              )) {
+                        return 'Card number is not valid';
                       }
                       if (!CardHelper.validateCardNumber(value)) {
                         return 'Card number is not valid';
                       }
-                
+
                       return null;
                     },
                     onChanged: (value) {
-                      _numberCardController.text = CardHelper().applyMask(value);
+                      _numberCardController.text = CardHelper().applyMask(
+                        value,
+                      );
                       setState(() {});
                     },
                   ),
@@ -417,8 +555,9 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
                     hintText: 'Holder´s Name',
                     maxLength: 20,
                     enabled: !_activateOtp,
+                    borderSide: BorderSide.none,
                     textCapitalization: TextCapitalization.characters,
-                    
+                    fillColor: Colors.grey.shade200,
                     autovalidateMode: AutovalidateMode.onUnfocus,
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'[A-Z ]')),
@@ -435,7 +574,7 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
                     },
                   ),
                 ),
-                
+
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Row(
@@ -446,13 +585,14 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
                           controller: _expireDateController,
                           hintText: 'MM/YY',
                           enabled: !_activateOtp,
+                          fillColor: Colors.grey.shade200,
+                          borderSide: BorderSide.none,
                           keyboardType: TextInputType.numberWithOptions(),
                           validator:
                               (value) => CardHelper().validateExpiryDate(value),
                           onChanged: (value) {
-                            _expireDateController.text = CardHelper().formatExpiry(
-                              value,
-                            );
+                            _expireDateController.text = CardHelper()
+                                .formatExpiry(value);
                             setState(() {});
                           },
                           maxLength: 5,
@@ -466,15 +606,17 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
                           onChanged: (va) {
                             setState(() {});
                           },
+                          borderSide: BorderSide.none,
                           autovalidateMode: AutovalidateMode.onUnfocus,
                           focusNode: _cvcFocus,
                           enabled: !_activateOtp,
+                          fillColor: Colors.grey.shade200,
                           keyboardType: TextInputType.numberWithOptions(),
                           maxLength:
                               CardHelper()
                                   .getCardInfo(_numberCardController.text)
                                   .cvcNumber,
-                
+
                           validator: (value) {
                             if (value == null ||
                                 value.trim().isEmpty ||
@@ -489,7 +631,9 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
                           onTapOutside: () {
                             _cvcFlipCard();
                           },
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
                         ),
                       ),
                     ],
@@ -502,6 +646,8 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
                       controller: _otpCodeController,
                       hintText: 'Otp Code',
                       maxLength: 6,
+                      borderSide: BorderSide.none,
+                      fillColor: Colors.grey.shade200,
                       autovalidateMode: AutovalidateMode.onUnfocus,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       validator: (value) {
@@ -511,7 +657,7 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
                         if (value.length != 6) {
                           return 'Otp code  is not valid';
                         }
-                
+
                         return null;
                       },
                       onChanged: (v) {
@@ -522,25 +668,31 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
                   ),
               ],
             ),
-                FilledButtonWidget(
-                  width: size.width * 0.9,
-                  borderRadius: 10,
-                  color: widget.backgroundButtonColor,
-                  text: _activateOtp ? 'Verify OTP' : 'Add Card',
-                  onPressed: () {
-                    if (_keyForm.currentState!.validate()) {
-                      _activateOtp ? _verifyByOtp() : _addCardProcess();
-                    }
-                  },
-                ),
-                // SizedBox(height: 20),
-                // FilledButtonWidget(
-                  //   width: size.width * 0.9,
-                  //   text: 'show modal',
-                //   onPressed: () {
-                   
-                //   },
-                // ),
+            FilledButtonWidget(
+              width: size.width * 0.9,
+              borderRadius: 10,
+              color: widget.backgroundButtonColor,
+              text: _activateOtp ? 'Verify OTP' : 'Add Card',
+              onPressed: () {
+                if (_keyForm.currentState!.validate()) {
+                  _activateOtp
+                      ? _verify(
+                        type: "BY_OTP",
+                        transactionId: referenceId,
+                        value: _otpCodeController.text,
+                      )
+                      : _addCardProcess();
+                }
+              },
+            ),
+            // SizedBox(height: 20),
+            // FilledButtonWidget(
+            //   width: size.width * 0.9,
+            //   text: 'show modal',
+            //   onPressed: () {
+
+            //   },
+            // ),
           ],
         ),
       ),

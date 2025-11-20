@@ -1,273 +1,281 @@
-import 'package:nuvei_sdk_flutter/model/add_card_model/card_response_model.dart';
+// To parse this JSON data, do
+//
+//     final otpResponse = otpResponseFromJson(jsonString);
 
+import 'dart:convert';
+
+OtpResponse otpResponseFromJson(String str) => OtpResponse.fromJson(json.decode(str));
+
+String otpResponseToJson(OtpResponse data) => json.encode(data.toJson());
 class OtpResponse {
-  final int? status;
-  final DateTime? paymentDate;
-  final double? amount;
-  final String? transactionId;
-  final int? statusDetail;
-  final String? message;
-  final TransactionOtpResponse? transaction;
-  final CardOtpResponse? card;
-  final ThreeDsResponse? threeDs;
+  Transaction transaction;
+  Card card;
+  ThreeDsData? threeDs; // <-- AGREGADO
 
   OtpResponse({
-    this.status,
-    this.paymentDate,
-    this.amount,
-    this.transactionId,
-    this.statusDetail,
-    this.message,
-    this.transaction,
-    this.card,
+    required this.transaction,
+    required this.card,
     this.threeDs,
   });
 
   factory OtpResponse.fromJson(Map<String, dynamic> json) => OtpResponse(
-        status: json['status'],
-        paymentDate: json['payment_date'] != null
-            ? DateTime.tryParse(json['payment_date'])
-            : null,
-        amount: (json['amount'] as num?)?.toDouble(),
-        transactionId: json['transaction_id'],
-        statusDetail: json['status_detail'],
-        message: json['message'],
-        transaction: json['transaction'] != null
-            ? TransactionOtpResponse.fromJson(json['transaction'])
-            : null,
-        card: json['card'] != null
-            ? CardOtpResponse.fromJson(json['card'])
-            : null,
-        threeDs: json['3ds'] != null
-            ? ThreeDsResponse.fromJson(json['3ds'])
-            : null,
+        transaction: Transaction.fromJson(json["transaction"]),
+        card: Card.fromJson(json["card"]),
+        threeDs: json["3ds"] != null
+            ? ThreeDsData.fromJson(json["3ds"])
+            : null, // <-- Manejo seguro
       );
 
   Map<String, dynamic> toJson() => {
-        'status': status,
-        'payment_date': paymentDate?.toIso8601String(),
-        'amount': amount,
-        'transaction_id': transactionId,
-        'status_detail': statusDetail,
-        'message': message,
-        'transaction': transaction?.toJson(),
-        'card': card?.toJson(),
-        '3ds': threeDs?.toJson(),
+        "transaction": transaction.toJson(),
+        "card": card.toJson(),
+        if (threeDs != null) "3ds": threeDs!.toJson(),
       };
 }
+class Card {
+    String number;
+    String bin;
+    String type;
+    String transactionReference;
+    String status;
+    String token;
+    String expiryYear;
+    String expiryMonth;
+    String origin;
+    String? bankName;
 
-class TransactionOtpResponse {
-  final double amount;
-  final String? authorizationCode;
-  final String carrier;
-  final String? carrierCode;
-  final String? currentStatus;
-  final String devReference;
-  final String id;
-  final int installments;
-  final String installmentsType;
-  final String? message;
-  final String? paymentDate;
-  final String paymentMethodType;
-  final String productDescription;
-  final String status;
-  final int statusDetail;
+    Card({
+        required this.number,
+        required this.bin,
+        required this.type,
+        required this.transactionReference,
+        required this.status,
+        required this.token,
+        required this.expiryYear,
+        required this.expiryMonth,
+        required this.origin,
+         this.bankName,
+    });
 
-  TransactionOtpResponse({
-    required this.amount,
-    this.authorizationCode,
-    required this.carrier,
-    this.carrierCode,
-    this.currentStatus,
-    required this.devReference,
-    required this.id,
-    required this.installments,
-    required this.installmentsType,
-    this.message,
-    this.paymentDate,
-    required this.paymentMethodType,
-    required this.productDescription,
-    required this.status,
-    required this.statusDetail,
+    factory Card.fromJson(Map<String, dynamic> json) => Card(
+        number: json["number"],
+        bin: json["bin"],
+        type: json["type"],
+        transactionReference: json["transaction_reference"],
+        status: json["status"],
+        token: json["token"],
+        expiryYear: json["expiry_year"],
+        expiryMonth: json["expiry_month"],
+        origin: json["origin"],
+        bankName: json["bank_name"],
+    );
+
+    Map<String, dynamic> toJson() => {
+        "number": number,
+        "bin": bin,
+        "type": type,
+        "transaction_reference": transactionReference,
+        "status": status,
+        "token": token,
+        "expiry_year": expiryYear,
+        "expiry_month": expiryMonth,
+        "origin": origin,
+        "bank_name": bankName,
+    };
+}
+
+class Transaction {
+    String id;
+    String status;
+    String currentStatus;
+    int statusDetail;
+    dynamic paymentDate;
+    double amount;
+    int installments;
+    String carrierCode;
+    String message;
+    dynamic authorizationCode;
+    String devReference;
+    String carrier;
+    String productDescription;
+    String paymentMethodType;
+    String installmentsType;
+
+    Transaction({
+        required this.id,
+        required this.status,
+        required this.currentStatus,
+        required this.statusDetail,
+        required this.paymentDate,
+        required this.amount,
+        required this.installments,
+        required this.carrierCode,
+        required this.message,
+        required this.authorizationCode,
+        required this.devReference,
+        required this.carrier,
+        required this.productDescription,
+        required this.paymentMethodType,
+        required this.installmentsType,
+    });
+
+    factory Transaction.fromJson(Map<String, dynamic> json) => Transaction(
+        id: json["id"],
+        status: json["status"],
+        currentStatus: json["current_status"],
+        statusDetail: json["status_detail"],
+        paymentDate: json["payment_date"],
+        amount: json["amount"]?.toDouble(),
+        installments: json["installments"],
+        carrierCode: json["carrier_code"],
+        message: json["message"],
+        authorizationCode: json["authorization_code"],
+        devReference: json["dev_reference"],
+        carrier: json["carrier"],
+        productDescription: json["product_description"],
+        paymentMethodType: json["payment_method_type"],
+        installmentsType: json["installments_type"],
+    );
+
+    Map<String, dynamic> toJson() => {
+        "id": id,
+        "status": status,
+        "current_status": currentStatus,
+        "status_detail": statusDetail,
+        "payment_date": paymentDate,
+        "amount": amount,
+        "installments": installments,
+        "carrier_code": carrierCode,
+        "message": message,
+        "authorization_code": authorizationCode,
+        "dev_reference": devReference,
+        "carrier": carrier,
+        "product_description": productDescription,
+        "payment_method_type": paymentMethodType,
+        "installments_type": installmentsType,
+    };
+
+}
+
+
+class ThreeDsData {
+  SdkResponse? sdkResponse;
+  AuthenticationData? authentication;
+  BrowserResponse? browserResponse;
+
+  ThreeDsData({
+    this.sdkResponse,
+    this.authentication,
+    this.browserResponse,
   });
 
-  factory TransactionOtpResponse.fromJson(Map<String, dynamic> json) =>
-      TransactionOtpResponse(
-        amount: (json['amount'] as num).toDouble(),
-        authorizationCode: json['authorization_code'],
-        carrier: json['carrier'],
-        carrierCode: json['carrier_code'],
-        currentStatus: json['current_status'],
-        devReference: json['dev_reference'],
-        id: json['id'],
-        installments: json['installments'],
-        installmentsType: json['installments_type'],
-        message: json['message'],
-        paymentDate: json['payment_date'],
-        paymentMethodType: json['payment_method_type'],
-        productDescription: json['product_description'],
-        status: json['status'],
-        statusDetail: json['status_detail'],
+  factory ThreeDsData.fromJson(Map<String, dynamic> json) => ThreeDsData(
+        sdkResponse: json["sdk_response"] != null
+            ? SdkResponse.fromJson(json["sdk_response"])
+            : null,
+        authentication: json["authentication"] != null
+            ? AuthenticationData.fromJson(json["authentication"])
+            : null,
+        browserResponse: json["browser_response"] != null
+            ? BrowserResponse.fromJson(json["browser_response"])
+            : null,
       );
 
   Map<String, dynamic> toJson() => {
-        'amount': amount,
-        'authorization_code': authorizationCode,
-        'carrier': carrier,
-        'carrier_code': carrierCode,
-        'current_status': currentStatus,
-        'dev_reference': devReference,
-        'id': id,
-        'installments': installments,
-        'installments_type': installmentsType,
-        'message': message,
-        'payment_date': paymentDate,
-        'payment_method_type': paymentMethodType,
-        'product_description': productDescription,
-        'status': status,
-        'status_detail': statusDetail,
+        if (sdkResponse != null) "sdk_response": sdkResponse!.toJson(),
+        if (authentication != null) "authentication": authentication!.toJson(),
+        if (browserResponse != null)
+          "browser_response": browserResponse!.toJson(),
       };
 }
 
+class SdkResponse {
+  String? acsTransId;
+  String? acsSignedContent;
+  String? acsReferenceNumber;
 
-
-class SDKResponse {
-  final String acsTransId;
-  final String? acsSignedContent;
-  final String acsReferenceNumber;
-
-  SDKResponse({
-    required this.acsTransId,
+  SdkResponse({
+    this.acsTransId,
     this.acsSignedContent,
-    required this.acsReferenceNumber,
+    this.acsReferenceNumber,
   });
 
-  factory SDKResponse.fromJson(Map<String, dynamic> json) => SDKResponse(
-        acsTransId: json['acs_trans_id'],
-        acsSignedContent: json['acs_signed_content'],
-        acsReferenceNumber: json['acs_reference_number'],
+  factory SdkResponse.fromJson(Map<String, dynamic> json) => SdkResponse(
+        acsTransId: json["acs_trans_id"],
+        acsSignedContent: json["acs_signed_content"],
+        acsReferenceNumber: json["acs_reference_number"],
       );
 
   Map<String, dynamic> toJson() => {
-        'acs_trans_id': acsTransId,
-        'acs_signed_content': acsSignedContent,
-        'acs_reference_number': acsReferenceNumber,
+        "acs_trans_id": acsTransId,
+        "acs_signed_content": acsSignedContent,
+        "acs_reference_number": acsReferenceNumber,
       };
 }
 
-class Authentication3ds {
-  final String status;
-  final String returnMessage;
-  final String? version;
-  final String xid;
-  final String referenceId;
-  final String? cavv;
-  final String returnCode;
-  final String? eci;
+class AuthenticationData {
+  String? status;
+  String? returnMessage;
+  String? version;
+  String? xid;
+  String? referenceId;
+  String? cavv;
+  String? returnCode;
+  String? eci;
 
-  Authentication3ds({
-    required this.status,
-    required this.returnMessage,
+  AuthenticationData({
+    this.status,
+    this.returnMessage,
     this.version,
-    required this.xid,
-    required this.referenceId,
+    this.xid,
+    this.referenceId,
     this.cavv,
-    required this.returnCode,
+    this.returnCode,
     this.eci,
   });
 
-  factory Authentication3ds.fromJson(Map<String, dynamic> json) =>
-      Authentication3ds(
-        status: json['status'],
-        returnMessage: json['return_message'],
-        version: json['version'],
-        xid: json['xid'],
-        referenceId: json['reference_id'],
-        cavv: json['cavv'],
-        returnCode: json['return_code'],
-        eci: json['eci'],
+  factory AuthenticationData.fromJson(Map<String, dynamic> json) =>
+      AuthenticationData(
+        status: json["status"],
+        returnMessage: json["return_message"],
+        version: json["version"],
+        xid: json["xid"],
+        referenceId: json["reference_id"],
+        cavv: json["cavv"],
+        returnCode: json["return_code"],
+        eci: json["eci"],
       );
 
   Map<String, dynamic> toJson() => {
-        'status': status,
-        'return_message': returnMessage,
-        'version': version,
-        'xid': xid,
-        'reference_id': referenceId,
-        'cavv': cavv,
-        'return_code': returnCode,
-        'eci': eci,
+        "status": status,
+        "return_message": returnMessage,
+        "version": version,
+        "xid": xid,
+        "reference_id": referenceId,
+        "cavv": cavv,
+        "return_code": returnCode,
+        "eci": eci,
       };
 }
 
-class ThreeDsResponse {
-  final SDKResponse sdkResponse;
-  final Authentication3ds authentication;
-  final BrowserResponse browserResponse;
+class BrowserResponse {
+  String? hiddenIframe;
+  String? challengeRequest;
 
-  ThreeDsResponse({
-    required this.sdkResponse,
-    required this.authentication,
-    required this.browserResponse,
+  BrowserResponse({
+    this.hiddenIframe,
+    this.challengeRequest,
   });
 
-  factory ThreeDsResponse.fromJson(Map<String, dynamic> json) => ThreeDsResponse(
-        sdkResponse: SDKResponse.fromJson(json['sdk_response']),
-        authentication: Authentication3ds.fromJson(json['authentication']),
-        browserResponse: BrowserResponse.fromJson(json['browser_response']),
+  factory BrowserResponse.fromJson(Map<String, dynamic> json) =>
+      BrowserResponse(
+        hiddenIframe: json["hidden_iframe"],
+        challengeRequest: json["challenge_request"],
       );
 
   Map<String, dynamic> toJson() => {
-        'sdk_response': sdkResponse.toJson(),
-        'authentication': authentication.toJson(),
-        'browser_response': browserResponse.toJson(),
+        "hidden_iframe": hiddenIframe,
+        "challenge_request": challengeRequest,
       };
 }
 
-class CardOtpResponse {
-  final String bin;
-  final String status;
-  final String token;
-  final String expiryYear;
-  final String expiryMonth;
-  final String transactionReference;
-  final String type;
-  final String number;
-  final String origin;
-
-  CardOtpResponse({
-    required this.bin,
-    required this.status,
-    required this.token,
-    required this.expiryYear,
-    required this.expiryMonth,
-    required this.transactionReference,
-    required this.type,
-    required this.number,
-    required this.origin,
-  });
-
-  factory CardOtpResponse.fromJson(Map<String, dynamic> json) => CardOtpResponse(
-        bin: json['bin'],
-        status: json['status'],
-        token: json['token'],
-        expiryYear: json['expiry_year'],
-        expiryMonth: json['expiry_month'],
-        transactionReference: json['transaction_reference'],
-        type: json['type'],
-        number: json['number'],
-        origin: json['origin'],
-      );
-
-  Map<String, dynamic> toJson() => {
-        'bin': bin,
-        'status': status,
-        'token': token,
-        'expiry_year': expiryYear,
-        'expiry_month': expiryMonth,
-        'transaction_reference': transactionReference,
-        'type': type,
-        'number': number,
-        'origin': origin,
-      };
-}

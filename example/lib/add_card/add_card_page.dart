@@ -46,7 +46,7 @@ class _AddCardPageState extends State<AddCardPage> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(error.error.type, style: TextStyle(fontSize: 20)),
+                            Text(error.error.description, style: TextStyle(fontSize: 20)),
                             SizedBox(
                               width: MediaQuery.of(context).size.width * 0.7,
                               child: FilledButtonWidget(
@@ -66,7 +66,7 @@ class _AddCardPageState extends State<AddCardPage> {
               ),
         );
           },
-          onSuccesProcess: (approved) {
+          onSuccesProcess: (valid, message) {
              showDialog(
           context: context,
           builder:
@@ -81,7 +81,7 @@ class _AddCardPageState extends State<AddCardPage> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text('CARD ADDED SUCCESFULLY', style: TextStyle(fontSize: 20)),
+                            Text(message, style: TextStyle(fontSize: 20)),
                             SizedBox(
                               width: MediaQuery.of(context).size.width * 0.7,
                               child: FilledButtonWidget(

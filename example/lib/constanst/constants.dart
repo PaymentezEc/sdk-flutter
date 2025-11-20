@@ -13,5 +13,7 @@ class Constants {
 
 
   static const String clientId = 'viamaticatest-sdk';
+  // static const String clientId = '';
   static const String clientSecret = '2Fe2BeQh6QsBMP9lmdmUfeAvL5fkMuGq';
+  // static const String clientSecret = '';
 }

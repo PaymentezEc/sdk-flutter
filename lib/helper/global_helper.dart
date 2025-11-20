@@ -85,14 +85,19 @@ class GlobalHelper {
     }
   }
 
-  showModalWebView(context, Function(String) onClose, String challengueHtml, String token, String idCress)async {
+  showModalWebView(context,  Function(String cresValue) onClose, String challengueHtml, String token, String idCress)async {
 
     CresServices serviceCres = CresServices();
 
 
     ThreeDsHandler _handler = ThreeDsHandler();
 
-    _handler.startPolling(()=>serviceCres.cresGetData(token, idCress),onClose);
+    _handler.startPolling(()=>serviceCres.cresGetData(token, idCress), (cresValue) =>{
+      Navigator.pop(context),
+      _handler.stopPolling(),
+      onClose(cresValue)
+
+    } ,);
 
     GlobalHelper.logger.w('ENTRA AL CHALLENGUE');
     final controller = WebViewController()

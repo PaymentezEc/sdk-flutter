@@ -11,20 +11,24 @@ String cardResponseModelToJson(CardResponseModel data) => json.encode(data.toJso
 class CardResponseModel {
     Card card;
     The3Ds? the3Ds;
+    Transaction transaction;
 
     CardResponseModel({
         required this.card,
          this.the3Ds,
+         required this.transaction,
     });
 
     factory CardResponseModel.fromJson(Map<String, dynamic> json) => CardResponseModel(
         card: Card.fromJson(json["card"]),
         the3Ds: json["3ds"] != null ?  The3Ds.fromJson(json["3ds"]) : null,
+        transaction: Transaction.fromJson(json["transaction"]),
     );
 
     Map<String, dynamic> toJson() => {
         "card": card.toJson(),
         "3ds": the3Ds?.toJson(),
+        "transaction": transaction.toJson(),
     };
 }
 
@@ -145,6 +149,22 @@ class Authentication {
         "cavv": cavv,
         "return_code": returnCode,
         "eci": eci,
+    };
+}
+
+class Transaction {
+    int statusDetail;
+
+    Transaction({
+        required this.statusDetail,
+    });
+
+    factory Transaction.fromJson(Map<String, dynamic> json) => Transaction(
+        statusDetail: json["status_detail"],
+    );
+
+    Map<String, dynamic> toJson() => {
+        "status_detail": statusDetail,
     };
 }
 

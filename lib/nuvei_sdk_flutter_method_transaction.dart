@@ -39,6 +39,7 @@ class NuveiSdkFlutterMethodTransaction
     bool testMode,
     String clientId,
     String clientSecret,
+    
   ) {
     env.initConfig(
       appCode: appCode,
@@ -125,52 +126,7 @@ class NuveiSdkFlutterMethodTransaction
     }
   }
 
-  @override
-  Future<GeneralResponse> addCard(
-    CardModel card,
-    UserModel user,
-    BuildContext context,
-    String termId,
-  ) async {
-    final urlEndpoint = "/v2/card/add";
-    try {
-      GlobalHelper.logger.w('entry in this point');
 
-      final extraParams = ExtraParamsModel(
-        threeDs2Data: ThreeDs2Data(
-          termUrl: 'https://nuvei-cres-dev-bkh4atahdegxa8dk.eastus-01.azurewebsites.net/api/cres/save/$termId',
-          deviceType: 'browser',
-        ),
-        browserInfo: await GlobalHelper().getBrowserInfo(context),
-      );
-
-      final data = {"user": user, "card": card, "extra_params": extraParams};
-
-      final response = await interceptorHttp.request(
-        'POST',
-        urlEndpoint,
-        env.appCode,
-        env.appKey,
-        data,
-      );
-
-      if (!response.error) {
-        CardResponseModel cardResponse = cardResponseModelFromJson(
-          jsonEncode(response.data),
-        );
-        return GeneralResponse(error: false, data: cardResponse);
-      }
-      return GeneralResponse(error: true, data: response.data);
-    } catch (e) {
-      GlobalHelper.logger.e('ERROOOR: $e');
-       return GeneralResponse(
-        error: true,
-        data: ErrorResponseModel(
-          error: Error(type: 'Exception', help: '', description: '$e'),
-        ),
-      );
-    }
-  }
 
   @override
   Future<GeneralResponse> debit({
@@ -249,27 +205,5 @@ class NuveiSdkFlutterMethodTransaction
   }
 
 
-  @override
-  Future<GeneralResponse> verify(OtpRequest otpRequest) async {
 
-    try {
-    final urlEndPoint = '/v2/transaction/verify';
-    final response = await interceptorHttp.request(
-      'POST',
-      urlEndPoint,
-      env.serverCode,
-      env.serverKey,
-      otpRequest,
-    );
-      
-      return response;
-    } catch (e) {
-       return GeneralResponse(
-        error: true,
-        data: ErrorResponseModel(
-          error: Error(type: 'Exception', help: '', description: '$e'),
-        ),
-      );
-    }
-  }
 }

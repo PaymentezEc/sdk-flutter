@@ -51,17 +51,12 @@ abstract class NuveiSdkFlutterTransactionInterface {
     throw UnimplementedError('Delete card has not been implemented');
   }
 
-  Future<GeneralResponse> addCard(CardModel card, UserModel user, BuildContext context, String termId) {
-    throw UnimplementedError('Delete card has not been implemented');
-  }
+  
 
   Future<GeneralResponse> refund({required TransactionModel transaction, Order? order, bool moreInfo  = true}){
     throw UnimplementedError('Delete card has not been implemented');
   }
 
-  Future<GeneralResponse> verify(OtpRequest otpRequest)async{
-    throw UnimplementedError('Delete card has not been implemented');
-  }
 
 }
 

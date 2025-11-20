@@ -11,7 +11,7 @@ class ThreeDsHandler {
     final Duration pollinIntervalo = const Duration(seconds: 5);
 
 
-    Future<void> startPolling(Future<GeneralResponse<CresDataResponse>> Function() getCressFunction, Function(String cres) onCresTeceived,)async{
+    Future<void> startPolling(Future<GeneralResponse<CresDataResponse>> Function() getCressFunction, Function(String cresValue) onCresReceived,)async{
       _pollingTimer?.cancel();
       _pollingTimer = Timer.periodic(pollinIntervalo, (timer)async{
         if(_isCheking) return;
@@ -22,7 +22,7 @@ class ThreeDsHandler {
             timer.cancel();
             GlobalHelper.logger.w('entra en el cancel timer');
 
-            onCresTeceived(cres.data!.data.cres!);
+             onCresReceived(cres.data?.data.cres ?? '');
           }
 
         } catch (e) {
