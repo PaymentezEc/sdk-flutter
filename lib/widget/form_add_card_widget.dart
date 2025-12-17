@@ -141,7 +141,7 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
     final extraParams = ExtraParamsModel(
       threeDs2Data: ThreeDs2Data(
         termUrl:
-            'https://nuvei-cres-dev-bkh4atahdegxa8dk.eastus-01.azurewebsites.net/api/cres/save/$cresReferenceId',
+            '${Environment().baseConfig?.urlCresBase}/api/cres/save/$cresReferenceId',
         deviceType: 'browser',
       ),
       browserInfo: await GlobalHelper().getBrowserInfo(context),
