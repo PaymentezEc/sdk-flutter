@@ -20,7 +20,7 @@ class ThreeDsHandler {
           final cres = await getCressFunction();
           if(cres.data?.data.cres != null && cres.data!.data.cres!.isNotEmpty ){
             timer.cancel();
-            GlobalHelper.logger.w('entra en el cancel timer');
+            //GlobalHelper.logger.w('entra en el cancel timer');
 
              onCresReceived(cres.data?.data.cres ?? '');
           }

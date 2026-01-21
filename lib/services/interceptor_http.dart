@@ -194,7 +194,7 @@ class InterceptorHttp {
         ),
       );
       generalResponse.error = true;
-      debugPrint('$e');
+      // debugPrint('$e');
     } on FormatException catch (ex) {
       generalResponse.data = ErrorResponseModel(
         error: Error(
@@ -204,7 +204,7 @@ class InterceptorHttp {
         ),
       );
       generalResponse.error = true;
-      debugPrint(ex.toString());
+      // debugPrint(ex.toString());
     } on SocketException catch (exSock) {
       generalResponse.data = ErrorResponseModel(
         error: Error(
@@ -226,7 +226,7 @@ class InterceptorHttp {
       generalResponse.error = true;
       logger.e("Error on request: $stacktrace");
     }
-    GlobalHelper.logger.w('Esto devuelve ${jsonEncode(generalResponse)}');
+    //GlobalHelper.logger.w('Esto devuelve ${jsonEncode(generalResponse)}');
     return generalResponse;
   }
 

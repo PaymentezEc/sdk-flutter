@@ -80,7 +80,7 @@ class GlobalHelper {
             'Mozilla/5.0 (iPhone; CPU iPhone OS 18_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
       );
     } catch (e) {
-      GlobalHelper.logger.e('Error info browser, $e');
+      //GlobalHelper.logger.e('Error info browser, $e');
       return null;
     }
   }
@@ -99,7 +99,7 @@ class GlobalHelper {
 
     } ,);
 
-    GlobalHelper.logger.w('ENTRA AL CHALLENGUE');
+    //GlobalHelper.logger.w('ENTRA AL CHALLENGUE');
     final controller = WebViewController()
 
   

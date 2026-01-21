@@ -31,7 +31,7 @@ class CresServices {
       }
       return GeneralResponse(error: response.error, data: cresLoginResponse);
     } catch (e) {
-      GlobalHelper.logger.w('Error to login cres');
+      //GlobalHelper.logger.w('Error to login cres');
       return GeneralResponse(error: true);
     }
   }
@@ -61,7 +61,7 @@ class CresServices {
         data: cresConsultingResponse,
       );
     } catch (e) {
-      GlobalHelper.logger.w('Error to genterate reference');
+      //GlobalHelper.logger.w('Error to genterate reference');
       return GeneralResponse(error: true);
     }
   }
@@ -93,7 +93,7 @@ class CresServices {
         data: cresConsultingResponse,
       );
     } catch (e) {
-      GlobalHelper.logger.w('Error to save cres data');
+      //GlobalHelper.logger.w('Error to save cres data');
       return GeneralResponse(error: true);
     }
   }
@@ -127,7 +127,7 @@ class CresServices {
         data: cresDataResponse,
       );
     } catch (e) {
-      GlobalHelper.logger.w('Error to get cress information');
+      //GlobalHelper.logger.w('Error to get cress information');
       return GeneralResponse(error: true);
     }
   }
@@ -161,7 +161,7 @@ class CresServices {
         data: cresDataResponse,
       );
     } catch (e) {
-      GlobalHelper.logger.w('Error to get cress information');
+      //GlobalHelper.logger.w('Error to get cress information');
       return GeneralResponse(error: true);
     }
   }

@@ -215,7 +215,7 @@ class _HomePageState extends State<HomePage> {
                         );
                         Navigator.pop(context);
 
-                          GlobalHelper.logger.w('entra ${response.error}');
+                          //GlobalHelper.logger.w('entra ${response.error}');
                         if (!response.error) {
                           TransactionResponse payment = transactionResponseFromJson(jsonEncode(response.data));
                           Navigator.pushNamed(context,'payment_detail',arguments: payment);

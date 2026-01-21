@@ -84,7 +84,7 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
   CresServices cresServices = CresServices();
 
   void _cvcFlipCard() async {
-    GlobalHelper.logger.i('focus ${(_cvcFocus.hasFocus && !_flipped)}');
+    //GlobalHelper.logger.i('focus ${(_cvcFocus.hasFocus && !_flipped)}');
     if (_cvcFocus.hasFocus) {
       if (!_flipped) {
         await controller.flipcard();
@@ -263,7 +263,7 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
 
       widget.onLoading(false);
       if (!response.error) {
-        GlobalHelper.logger.w("RESPONSE");
+        //GlobalHelper.logger.w("RESPONSE");
         OtpResponse otpResponse = otpResponseFromJson(
           jsonEncode(response.data),
         );
@@ -394,7 +394,7 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
         }
       }
     } catch (e) {
-      GlobalHelper.logger.w("ERROR: $e");
+      //GlobalHelper.logger.w("ERROR: $e");
       widget.onErrorProcess(
         ErrorResponseModel(
           error: Error(
@@ -419,9 +419,9 @@ class _FormAddCardWidgetState extends State<FormAddCardWidget> {
   //     );
   //   } else {
   //     await Future.delayed(const Duration(seconds: 10), () {
-  //       GlobalHelper.logger.w('Despues de los 5');
+  //       //GlobalHelper.logger.w('Despues de los 5');
   //     });
-  //     GlobalHelper.logger.w('Request Verify');
+  //     //GlobalHelper.logger.w('Request Verify');
 
   //     try {
   //       final response = await NuveiSdkFlutterTransactionInterface.instance

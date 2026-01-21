@@ -48,7 +48,7 @@ class Environment {
     }
     _clientId = clientId;
     _clientSecret = clientSecret;
-    GlobalHelper.logger.i('Envirnment configurated, $appCode');
+    //GlobalHelper.logger.i('Envirnment configurated, $appCode');
   }
 
   BaseConfig _getConfig(String environment) {

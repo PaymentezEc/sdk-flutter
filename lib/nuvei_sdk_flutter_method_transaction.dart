@@ -97,7 +97,7 @@ class NuveiSdkFlutterMethodTransaction
         null,
         queryParameters: {"uid": userId},
       );
-      GlobalHelper.logger.w("aqui llego esto : ${jsonEncode(response)}");
+      //GlobalHelper.logger.w("aqui llego esto : ${jsonEncode(response)}");
       if (!response.error) {
         ListCardModel listCards = listCardModelFromJson(
           jsonEncode(response.data),
@@ -105,7 +105,7 @@ class NuveiSdkFlutterMethodTransaction
 
        final List<CardItemModel> validCards  = listCards.cards.where((card) => card.status == 'valid')
        .map((card){
-        GlobalHelper.logger.w('type card: ${card.type}');
+        //GlobalHelper.logger.w('type card: ${card.type}');
         card.icon = CardHelper().getCardInfoBytipe(card.type ?? '').icon;
         return card;
        }).toList();
@@ -116,7 +116,7 @@ class NuveiSdkFlutterMethodTransaction
       }
       return response;
     } catch (e) {
-      GlobalHelper.logger.e('ERROOOR: $e');
+      //GlobalHelper.logger.e('ERROOOR: $e');
        return GeneralResponse(
         error: true,
         data: ErrorResponseModel(
@@ -148,7 +148,7 @@ class NuveiSdkFlutterMethodTransaction
         env.serverKey,
         transaction,
       );
-      GlobalHelper.logger.w('request error: ${response.error}');
+      //GlobalHelper.logger.w('request error: ${response.error}');
       if (!response.error) {
         TransactionResponse data = transactionResponseFromJson(
           jsonEncode(response.data),
@@ -157,7 +157,7 @@ class NuveiSdkFlutterMethodTransaction
       }
       return response;
     } catch (e) {
-      GlobalHelper.logger.e('ERROOOR: $e');
+      //GlobalHelper.logger.e('ERROOOR: $e');
        return GeneralResponse(
         error: true,
         data: ErrorResponseModel(
